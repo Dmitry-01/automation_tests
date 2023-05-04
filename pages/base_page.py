@@ -6,7 +6,7 @@ class BasePage:
         self.driver = driver
         self.url = url
 
-
+    # Открытие страницы
     def open(self):
         self.driver.get(self.url)
 
