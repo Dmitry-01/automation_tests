@@ -7,7 +7,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 def driver():
     # Строка ниже позволяет автоматически скачивать последнюю версию chromedriver
     # Благодаря этой команде запускается и открывается наш браузер
-    #
+
     driver = webdriver.Chrome(ChromeDriverManager().install())
     driver.maximize_window()
     yield driver
