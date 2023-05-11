@@ -3,15 +3,6 @@ from selenium.webdriver.common.by import By
 
 
 class TextBoxPageLocators:
-
-    # FIRST_NAME = (By.NAME, "firstName")
-    # LAST_NAME = (By.NAME, "lastName")
-    # EMAIL = (By.NAME, "email")
-    # PHONE = (By.ID,"phone-form-control")
-    # CHECK_BOX = (By.NAME, "checkbox")
-    # BUTTON_CREATE_ACCAUNT = (By.TAG_NAME, "button")
-
-
     #form fields
 
     FULL_NAME = (By.CSS_SELECTOR,"input[id='userName']")
@@ -30,9 +21,13 @@ class TextBoxPageLocators:
 class CheckBoxPageLocators:
     EXPAND_ALL_BUTTON = (By.CSS_SELECTOR, "button[title = 'Expand all']")
     ITEM_LIST = (By.CSS_SELECTOR, "span[class = 'rct-title']")
-
     CHECKED_ITEMS = (By.CSS_SELECTOR, "svg[class='rct-icon rct-icon-check']")
-
     TITLE_ITEM = (".//ancestor::span[@class='rct-text']")
-
     OUTPUT_RESULT = (By.CSS_SELECTOR, "span[class='text-success']")
+
+
+class RadioButtonsPageLocators:
+    YES_RADIOBUTTON = (By.CSS_SELECTOR, "label[class^='custom-control'][for='yesRadio']")
+    IMPRESSIVE_RADIOBUTTON = (By.CSS_SELECTOR, "label[class^='custom-control'][for='impressiveRadio']")
+    NO_RADIOBUTTON = (By.CSS_SELECTOR, "label[class^='custom-control'][for='noRadio']")
+    OUTPUT_RESULT = (By.CSS_SELECTOR, "p span[class='text-success']")
