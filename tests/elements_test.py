@@ -1,7 +1,8 @@
 import random
 import time
 
-from pages.elements_page import TextBoxPage, CheckBoxPage, RadioButtonPage, WebTablePage, ButtonsPage, LinksPage
+from pages.elements_page import TextBoxPage, CheckBoxPage, RadioButtonPage, WebTablePage, ButtonsPage, LinksPage, \
+    UploadAndDownload
 
 
 class TestElements:
@@ -119,3 +120,17 @@ class TestElements:
             links_page.open()
             response_code = links_page.check_broken_link('https://demoqa.com/bad-request')
             assert response_code == 400, "the link works or the status code in son 400"
+
+    class TestUploadAndDownload:
+
+        def test_upload_file(self, driver):
+            upload_and_download = UploadAndDownload(driver, 'https://demoqa.com/upload-download')
+            upload_and_download.open()
+            fale_name , result = upload_and_download.upload_file()
+            assert fale_name == result, "the file has not been uploaded"
+
+        def test_download_file(self, driver):
+            upload_and_download = UploadAndDownload(driver, 'https://demoqa.com/upload-download')
+            upload_and_download.open()
+            check = upload_and_download.download_file()
+            assert check is True, "the file has not been downloaded"
