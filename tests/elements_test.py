@@ -97,7 +97,7 @@ class TestElements:
     class TestButtonPage:
 
         def test_different_click_on_the_buttons(self, driver):
-            button_page = ButtonsPage(driver, 'https://demoqa.com/buttons')
+            button_page = ButtonsPage(driver, 'x')
             button_page.open()
             double = button_page.click_on_the_diffrent_button('double')
             right = button_page.click_on_the_diffrent_button('right')

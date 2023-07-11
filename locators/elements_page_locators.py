@@ -81,3 +81,4 @@ class DynamicPropertiesLocators:
     COLOR_CHANGE_BOTTON =(By.CSS_SELECTOR, "button[id='colorChange']")
     VISIBLE_AFTER_FIVE_SEC_BOTTON =(By.CSS_SELECTOR, "button[id='visibleAfter']")
     ENABLE_BUTTON = (By.CSS_SELECTOR, "button[id='enableAfter']")
+
