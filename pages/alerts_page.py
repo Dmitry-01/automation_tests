@@ -100,7 +100,7 @@ class ModalDialogsPage(BasePage):
 
     def check_modal_dialogs(self):
         self.element_is_visible(self.locators.SMALL_MODAL_BUTTON).click()
-        title_small = self.element_is_visible(self.locators.TITLE_SMALL_MODAL).text
+        title_small = self.element_is_visible(self.locators.TITLE_SMALL_MODAL).text 
         body_small = self.element_is_visible(self.locators.BODY_SMALL_MODAL).text
         self.element_is_visible(self.locators.SMALL_MODAL_CLOSE_BUTTON).click()
 

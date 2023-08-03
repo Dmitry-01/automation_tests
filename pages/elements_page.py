@@ -214,7 +214,7 @@ class UploadAndDownload(BasePage):
         text = self.element_is_present(self.locators.UPLOADED_RESULT).text
         print(file_name)
         print(text)
-        return file_name.split('/')[-1] , text.split('\\')[-1]
+        return file_name.split('/')[-1], text.split('\\')[-1]
 
     def download_file(self):
         link = self.element_is_present(self.locators.DOWNLOAD_FILE).get_attribute('href')
