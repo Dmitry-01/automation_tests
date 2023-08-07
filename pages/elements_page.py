@@ -5,11 +5,13 @@ import time
 
 import requests
 from selenium.common import TimeoutException
+from selenium.webdriver import Keys
 from selenium.webdriver.common.by import By
 
-from generator.generator import generated_person, generated_file
+from generator.generator import generated_person, generated_file, generated_color
 from locators.elements_page_locators import TextBoxPageLocators, CheckBoxPageLocators, RadioButtonsPageLocators, \
-    WebTableLocators, ButtonsPageLocators, LinksPageLocators, UploadAndDownloadLocators, DynamicPropertiesLocators
+    WebTableLocators, ButtonsPageLocators, LinksPageLocators, UploadAndDownloadLocators, DynamicPropertiesLocators, \
+    AutoCompletePageLocators
 from pages.base_page import BasePage
 
 
@@ -74,25 +76,27 @@ class CheckBoxPage(BasePage):
             data.append(item.text)
         return str(data).replace(' ', '').lower()
 
+
 class RadioButtonPage(BasePage):
     locators = RadioButtonsPageLocators()
 
     def click_on_the_radio_button(self, choice):
         choices = {'yes': self.locators.YES_RADIOBUTTON,
-              'impressive': self.locators.IMPRESSIVE_RADIOBUTTON,
-              'no':self.locators.NO_RADIOBUTTON}
+                   'impressive': self.locators.IMPRESSIVE_RADIOBUTTON,
+                   'no': self.locators.NO_RADIOBUTTON}
 
         self.element_is_visible(choices[choice]).click()
 
     def get_output_result(self):
         return self.element_is_present(self.locators.OUTPUT_RESULT).text
 
+
 class WebTablePage(BasePage):
     locators = WebTableLocators()
 
     def add_new_person(self, count=1):
         count = 1
-        while count !=0:
+        while count != 0:
             person_info = next(generated_person())
             firstname = person_info.firstname
             lastname = person_info.lastname
@@ -157,8 +161,8 @@ class WebTablePage(BasePage):
         list_rows = self.element_is_present(self.locators.FULL_PEOPLE_LIST)
         return len(list_rows)
 
-class ButtonsPage(BasePage):
 
+class ButtonsPage(BasePage):
     locators = ButtonsPageLocators()
 
     def click_on_the_diffrent_button(self, type_click):
@@ -180,8 +184,8 @@ class ButtonsPage(BasePage):
     def check_clicked_on_the_button(self, element):
         return self.element_is_present(element).text
 
-class LinksPage(BasePage):
 
+class LinksPage(BasePage):
     locators = LinksPageLocators()
 
     def check_new_tab_simple_link(self):
@@ -203,12 +207,12 @@ class LinksPage(BasePage):
         else:
             return request.status_code
 
-class UploadAndDownload(BasePage):
 
+class UploadAndDownload(BasePage):
     locators = UploadAndDownloadLocators()
 
     def upload_file(self):
-        file_name , path = generated_file()
+        file_name, path = generated_file()
         self.element_is_present(self.locators.UPLOAD_FILE).send_keys(path)
         os.remove(path)
         text = self.element_is_present(self.locators.UPLOADED_RESULT).text
@@ -228,10 +232,9 @@ class UploadAndDownload(BasePage):
         os.remove(path_name_file)
         return check_file
 
+
 class DynamicPropertiesPage(BasePage):
-
     locators = DynamicPropertiesLocators()
-
 
     def check_enable_button(self):
         try:
@@ -255,6 +258,40 @@ class DynamicPropertiesPage(BasePage):
         return True
 
 
+class AutoCompletePage(BasePage):
+    locators = AutoCompletePageLocators()
 
+    def fill_input_multi(self):
+        colors = random.sample(next(generated_color()).color_name, k=random.randint(2, 5))
+        for color in colors:
+            input_multi = self.element_is_clickable(self.locators.MULTI_INPUT)
+            input_multi.send_keys(color)
+            input_multi.send_keys(Keys.ENTER)
+        return colors
 
+    def remove_value_from_multi(self):
+        count_value_before = len(self.elements_are_present(self.locators.MULTI_VALUE))
+        remove_button_list = self.elements_are_visible(self.locators.MULTI_VALUE_REMOVE)
+        for value in remove_button_list:
+            value.click()
+            break
+        count_value_after = len(self.elements_are_present(self.locators.MULTI_VALUE))
+        return count_value_before, count_value_after
 
+    def check_color_in_multi(self):
+        color_list = self.elements_are_present(self.locators.MULTI_VALUE)
+        colors = []
+        for color in color_list:
+            colors.append(color.text)
+        return colors
+
+    def fill_input_single(self):
+        color = random.sample(next(generated_color()).color_name, k=1)
+        input_single = self.element_is_clickable(self.locators.SINGLE_INPUT)
+        input_single.send_keys(color)
+        input_single.send_keys(Keys.ENTER)
+        return color[0]
+
+    def check_color_in_single(self):
+        color = self.element_is_visible(self.locators.SINGLE_VALUE).text
+        return color

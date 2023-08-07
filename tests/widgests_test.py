@@ -1,3 +1,6 @@
+import time
+
+from pages.elements_page import AutoCompletePage
 from pages.widgets_page import AccordianPage
 
 
@@ -16,6 +19,28 @@ class TestWidgets:
             assert third_title == "Why do we use it?" and third_content > 0
 
 
-# class TestAutoCompletePage:
-#     def test_till_single_autocomplete(self, driver):
-#         autocomplete_page = AutoCompletePage(driver, "https://demoqa.com/accordian")
+    class TestAutoCompletePage:
+        def test_till_multi_autocomplete(self, driver):
+            autocomplete_page = AutoCompletePage(driver, "https://demoqa.com/auto-complete")
+            autocomplete_page.open()
+            colors = autocomplete_page.fill_input_multi()
+            colors_result = autocomplete_page.check_color_in_multi()
+            assert colors == colors_result
+            print(colors)
+            print(colors_result)
+
+        def test_remove_value_from_multi(self, driver):
+            autocomplete_page = AutoCompletePage(driver, "https://demoqa.com/auto-complete")
+            autocomplete_page.open()
+            autocomplete_page.fill_input_multi()
+            count_value_before, count_value_after = autocomplete_page.remove_value_from_multi()
+            print(count_value_before)
+            print(count_value_after)
+            assert count_value_before != count_value_after
+
+        def test_fill_single_autocomplete(self, driver):
+            autocomplete_page = AutoCompletePage(driver, "https://demoqa.com/auto-complete")
+            autocomplete_page.open()
+            color = autocomplete_page.fill_input_single()
+            color_result = autocomplete_page.check_color_in_single()
+            assert color == color_result

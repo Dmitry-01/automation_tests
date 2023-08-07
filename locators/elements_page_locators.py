@@ -89,3 +89,11 @@ class AlertsPageLocators:
     PROMT_BOX_ALERT_BUTTON = (By.CSS_SELECTOR, "button[id='promtButton']")
     CONFIRM_RESULT = (By.CSS_SELECTOR, "span[id='confirmResult']")
     PROMT_RESULT = (By.CSS_SELECTOR, "span[id='promptResult']")
+
+class AutoCompletePageLocators:
+    MULTI_INPUT = (By.CSS_SELECTOR, "input[id='autoCompleteMultipleInput']")
+    MULTI_VALUE = (By.CSS_SELECTOR, "div[class='css-12jo7m5 auto-complete__multi-value__label']")
+    MULTI_VALUE_REMOVE = (By.CSS_SELECTOR, "div[class='css-xb97g8 auto-complete__multi-value__remove'] svg path")
+    SINGLE_VALUE = (By.CSS_SELECTOR, "div[class='auto-complete__single-value css-1uccc91-singleValue']")
+    SINGLE_INPUT = (By.CSS_SELECTOR, "input[id='autoCompleteSingleInput']")
+
