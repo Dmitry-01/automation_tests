@@ -1,7 +1,6 @@
 import time
-
 from pages.elements_page import AutoCompletePage
-from pages.widgets_page import AccordianPage
+from pages.widgets_page import AccordianPage, DataPickerPage, SliderPage, ProgressBarPage
 
 
 class TestWidgets:
@@ -44,3 +43,38 @@ class TestWidgets:
             color = autocomplete_page.fill_input_single()
             color_result = autocomplete_page.check_color_in_single()
             assert color == color_result
+
+    class TestDatePickerPage:
+
+        def test_change_date(self, driver):
+            data_picker_page = DataPickerPage(driver,"https://demoqa.com/date-picker")
+            data_picker_page.open()
+            value_date_before, value_date_after = data_picker_page.select_date()
+            print(value_date_before)
+            print(value_date_after)
+            assert value_date_before != value_date_after
+
+
+        def test_change_date_time(self, driver):
+            data_picker_page = DataPickerPage(driver, "https://demoqa.com/date-picker")
+            data_picker_page.open()
+            value_date_before, value_date_after = data_picker_page.select_date_and_time()
+            print(value_date_before)
+            print(value_date_after)
+            assert value_date_before != value_date_after
+
+    class TestSliderPage:
+
+        def test_clider(self, driver):
+            slider = SliderPage(driver, 'https://demoqa.com/slider')
+            slider.open()
+            before, after = slider.change_slider_value()
+            assert before != after
+
+    class TestProgressBarPage:
+        def test_progress_bar(self, driver):
+            progress_bar = ProgressBarPage(driver, 'https://demoqa.com/progress-bar')
+            progress_bar.open()
+            before, after = progress_bar.change_progress_bar_value()
+            print(before)
+            print(after)

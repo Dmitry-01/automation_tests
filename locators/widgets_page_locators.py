@@ -9,3 +9,24 @@ class AccordianPageLocators:
     SECTION_THIRD = (By.CSS_SELECTOR,'div[id="section3Heading"]')
     SECTION_CONTENT_THIRD = (By.CSS_SELECTOR,'div[id="section3Content"] p')
 
+class DataPickerLocators:
+    DATA_INPUT = (By.CSS_SELECTOR,"input[id='datePickerMonthYearInput']")
+    DATA_SELECT_MONTH = (By.CSS_SELECTOR,"select[class='react-datepicker__month-select']")
+    DATA_SELECT_YEAR = (By.CSS_SELECTOR,"select[class='react-datepicker__year-select']")
+    DATA_SELECT_DAY_LIST = (By.CSS_SELECTOR,"div[class^='react-datepicker__day react-datepicker__day']")
+
+    DATA_AND_TIME_INPUT = (By.CSS_SELECTOR,"input[id='dateAndTimePickerInput']")
+    DATA_AND_TIME_MONTH = (By.CSS_SELECTOR,"div[class='react-datepicker__month-read-view']")
+    DATA_AND_TIME_YEAR = (By.CSS_SELECTOR,"div[class='react-datepicker__year-read-view']")
+
+    DATA_AND_TIME_TIME_LIST = (By.CSS_SELECTOR,"li[class='react-datepicker__time-list-item ']")
+    DATA_AND_TIME_MONTH_LIST = (By.CSS_SELECTOR, "div[class ='react-datepicker__month-option']")
+    DATA_AND_TIME_YEAR_LIST = (By.CSS_SELECTOR, "div[class ='react-datepicker__year-option']")
+
+class SliderLocators:
+    INPUT_SLIDER = (By.CSS_SELECTOR, 'input[class="range-slider range-slider--primary"]')
+    SLIDER_VALUE = (By.CSS_SELECTOR, 'input[id="sliderValue"]')
+
+class ProgressBarLocators:
+    PROGRESS_BAR_BUTTON = (By.CSS_SELECTOR,'button[id="startStopButton"]')
+    PROGRESS_BAR_VALUE = (By.CSS_SELECTOR,'div[class="progress-bar bg-info"]')
