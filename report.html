@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>report.html</title>
+    <link href="assets/style.css" rel="stylesheet" type="text/css"/></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) { // eslint-disable-line no-redeclare
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function findAll(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sortColumn(elem) {
+    toggleSortStates(elem);
+    const colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    let key;
+    if (elem.classList.contains('result')) {
+        key = keyResult;
+    } else if (elem.classList.contains('links')) {
+        key = keyLink;
+    } else {
+        key = keyAlpha;
+    }
+    sortTable(elem, key(colIndex));
+}
+
+function showAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(showExtras);
+}
+
+function hideAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(hideExtras);
+}
+
+function showExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.remove('collapsed');
+    expandcollapse.classList.remove('expander');
+    expandcollapse.classList.add('collapser');
+}
+
+function hideExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.add('collapsed');
+    expandcollapse.classList.remove('collapser');
+    expandcollapse.classList.add('expander');
+}
+
+function showFilters() {
+    let visibleString = getQueryParameter('visible') || 'all';
+    visibleString = visibleString.toLowerCase();
+    const checkedItems = visibleString.split(',');
+
+    const filterItems = document.getElementsByClassName('filter');
+    for (let i = 0; i < filterItems.length; i++) {
+        filterItems[i].hidden = false;
+
+        if (visibleString != 'all') {
+            filterItems[i].checked = checkedItems.includes(filterItems[i].getAttribute('data-test-result'));
+            filterTable(filterItems[i]);
+        }
+    }
+}
+
+function addCollapse() {
+    // Add links for show/hide all
+    const resulttable = find('table#results-table');
+    const showhideall = document.createElement('p');
+    showhideall.innerHTML = '<a href="javascript:showAllExtras()">Show all details</a> / ' +
+                            '<a href="javascript:hideAllExtras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    findAll('.col-result').forEach(function(elem) {
+        const collapsed = getQueryParameter('collapsed') || 'Passed';
+        const extras = elem.parentNode.nextElementSibling;
+        const expandcollapse = document.createElement('span');
+        if (extras.classList.contains('collapsed')) {
+            expandcollapse.classList.add('expander');
+        } else if (collapsed.includes(elem.innerHTML)) {
+            extras.classList.add('collapsed');
+            expandcollapse.classList.add('expander');
+        } else {
+            expandcollapse.classList.add('collapser');
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener('click', function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains('collapsed')) {
+                showExtras(event.currentTarget);
+            } else {
+                hideExtras(event.currentTarget);
+            }
+        });
+    });
+}
+
+function getQueryParameter(name) {
+    const match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function init () { // eslint-disable-line no-unused-vars
+    resetSortHeaders();
+
+    addCollapse();
+
+    showFilters();
+
+    sortColumn(find('.initial-sort'));
+
+    findAll('.sortable').forEach(function(elem) {
+        elem.addEventListener('click',
+            function() {
+                sortColumn(elem);
+            }, false);
+    });
+}
+
+function sortTable(clicked, keyFunc) {
+    const rows = findAll('.results-table-row');
+    const reversed = !clicked.classList.contains('asc');
+    const sortedRows = sort(rows, keyFunc, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    const thead = document.getElementById('results-table-head');
+    document.getElementById('results-table').remove();
+    const parent = document.createElement('table');
+    parent.id = 'results-table';
+    parent.appendChild(thead);
+    sortedRows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName('BODY')[0].appendChild(parent);
+}
+
+function sort(items, keyFunc, reversed) {
+    const sortArray = items.map(function(item, i) {
+        return [keyFunc(item), i];
+    });
+
+    sortArray.sort(function(a, b) {
+        const keyA = a[0];
+        const keyB = b[0];
+
+        if (keyA == keyB) return 0;
+
+        if (reversed) {
+            return keyA < keyB ? 1 : -1;
+        } else {
+            return keyA > keyB ? 1 : -1;
+        }
+    });
+
+    return sortArray.map(function(item) {
+        const index = item[1];
+        return items[index];
+    });
+}
+
+function keyAlpha(colIndex) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[colIndex].firstChild.data.toLowerCase();
+    };
+}
+
+function keyLink(colIndex) {
+    return function(elem) {
+        const dataCell = elem.childNodes[1].childNodes[colIndex].firstChild;
+        return dataCell == null ? '' : dataCell.innerText.toLowerCase();
+    };
+}
+
+function keyResult(colIndex) {
+    return function(elem) {
+        const strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+            'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function resetSortHeaders() {
+    findAll('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    findAll('.sortable').forEach(function(elem) {
+        const icon = document.createElement('div');
+        icon.className = 'sort-icon';
+        icon.textContent = 'vvv';
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove('desc', 'active');
+        elem.classList.add('asc', 'inactive');
+    });
+}
+
+function toggleSortStates(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        resetSortHeaders();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function isAllRowsHidden(value) {
+    return value.hidden == false;
+}
+
+function filterTable(elem) { // eslint-disable-line no-unused-vars
+    const outcomeAtt = 'data-test-result';
+    const outcome = elem.getAttribute(outcomeAtt);
+    const classOutcome = outcome + ' results-table-row';
+    const outcomeRows = document.getElementsByClassName(classOutcome);
+
+    for(let i = 0; i < outcomeRows.length; i++){
+        outcomeRows[i].hidden = !elem.checked;
+    }
+
+    const rows = findAll('.results-table-row').filter(isAllRowsHidden);
+    const allRowsHidden = rows.length == 0 ? true : false;
+    const notFoundMessage = document.getElementById('not-found-message');
+    notFoundMessage.hidden = !allRowsHidden;
+}
+</script>
+    <h1>report.html</h1>
+    <p>Report generated on 10-Aug-2023 at 16:53:42 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v3.2.0</p>
+    <h2>Summary</h2>
+    <p>32 tests ran in 282.99 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="passed">27 passed</span>, <input checked="true" class="filter" data-test-result="skipped" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="skipped">0 skipped</span>, <input checked="true" class="filter" data-test-result="failed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="failed">5 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable" col="name">Test</th>
+          <th class="sortable" col="duration">Duration</th>
+          <th class="sortable links" col="links">Links</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">tests/elements_test.py::TestElements::TestRadioButton::test_radio_button</td>
+          <td class="col-duration">4.50</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;elements_test.TestElements.TestRadioButton object at 0x7fa959d8ef70&gt;<br/>driver = &lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&quot;f48afeebeabacc61f30a3bc03554434b&quot;)&gt;<br/><br/>    def test_radio_button(self, driver):<br/>        radio_button_page = RadioButtonPage(driver, &#x27;https://demoqa.com/radio-button&#x27;)<br/>        radio_button_page.open()<br/>        radio_button_page.click_on_the_radio_button(&#x27;yes&#x27;)<br/>        output_yes = radio_button_page.get_output_result()<br/>        radio_button_page.click_on_the_radio_button(&#x27;impressive&#x27;)<br/>        output_impressive = radio_button_page.get_output_result()<br/>        radio_button_page.click_on_the_radio_button(&#x27;no&#x27;)<br/>        output_no = radio_button_page.get_output_result()<br/>        assert output_yes == &#x27;Yes&#x27;, &quot;Yes have not been selected&quot;<br/>        assert output_impressive == &#x27;Impressive&#x27;, &quot;Impressive have not been selected&quot;<br/>&gt;       assert output_no == &#x27;No&#x27;, &quot;No have not been selected&quot;<br/><span class="error">E       AssertionError: No have not been selected</span><br/><span class="error">E       assert &#x27;Impressive&#x27; == &#x27;No&#x27;</span><br/><span class="error">E         - No</span><br/><span class="error">E         + Impressive</span><br/><br/>tests/elements_test.py:43: AssertionError<br/></div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">tests/elements_test.py::TestElements::TestWebTable::test_web_table_search_person</td>
+          <td class="col-duration">20.36</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;elements_test.TestElements.TestWebTable object at 0x7fa959d8e7c0&gt;, driver = &lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&quot;712bf746cd6f02df51ee76557a7b99c2&quot;)&gt;<br/><br/>    def test_web_table_search_person(self, driver):<br/>        web_table_page = WebTablePage(driver, &#x27;https://demoqa.com/webtables&#x27;)<br/>        web_table_page.open()<br/>        key_word = web_table_page.add_new_person()[random.randint(0, 5)]<br/>        web_table_page.search_some_person(key_word)<br/>        table_result = web_table_page.check_search_person()<br/>        print(table_result)<br/>&gt;       assert key_word in table_result, &quot;The person was not found in the table&quot;<br/><span class="error">E       AssertionError: The person was not found in the table</span><br/><span class="error">E       assert &#x27;petrovnikodim@example.org&#x27; in [&#x27;Cierra&#x27;, &#x27;Vega&#x27;, &#x27;39&#x27;, &#x27;cierra@example.com&#x27;, &#x27;10000&#x27;, &#x27;Insurance&#x27;]</span><br/><br/>tests/elements_test.py:63: AssertionError<br/> ------------------------------Captured stdout call------------------------------ <br/>[&#x27;Cierra&#x27;, &#x27;Vega&#x27;, &#x27;39&#x27;, &#x27;cierra@example.com&#x27;, &#x27;10000&#x27;, &#x27;Insurance&#x27;]
+<br/></div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">tests/elements_test.py::TestElements::TestWebTable::test_web_table_change_count_row</td>
+          <td class="col-duration">4.63</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;elements_test.TestElements.TestWebTable object at 0x7fa95d786fd0&gt;, driver = &lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&quot;8bcad71f417d1478f50f05f2cae082df&quot;)&gt;<br/><br/>    def test_web_table_change_count_row(self, driver):<br/>        web_table_page = WebTablePage(driver, &#x27;https://demoqa.com/webtables&#x27;)<br/>        web_table_page.open()<br/>&gt;       count = web_table_page.select_up_to_some_rows()<br/><br/>tests/elements_test.py:93: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/>pages/elements_page.py:157: in select_up_to_some_rows<br/>    self.element_is_visible(By.CSS_SELECTOR, f&quot;option[value=&#x27;{x}&#x27;]&quot;)<br/>pages/base_page.py:15: in element_is_visible<br/>    return wait(self.driver, timeout).until(EC.visibility_of_element_located(locator))<br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>self = &lt;selenium.webdriver.support.wait.WebDriverWait (session=&quot;8bcad71f417d1478f50f05f2cae082df&quot;)&gt;<br/>driver = &lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&quot;8bcad71f417d1478f50f05f2cae082df&quot;)&gt;, timeout = &quot;option[value=&#x27;5&#x27;]&quot;, poll_frequency = 0.5<br/>ignored_exceptions = None<br/><br/>    def __init__(<br/>        self,<br/>        driver,<br/>        timeout: float,<br/>        poll_frequency: float = POLL_FREQUENCY,<br/>        ignored_exceptions: typing.Optional[WaitExcTypes] = None,<br/>    ):<br/>        &quot;&quot;&quot;Constructor, takes a WebDriver instance and timeout in seconds.<br/>    <br/>        :Args:<br/>         - driver - Instance of WebDriver (Ie, Firefox, Chrome or Remote)<br/>         - timeout - Number of seconds before timing out<br/>         - poll_frequency - sleep interval between calls<br/>           By default, it is 0.5 second.<br/>         - ignored_exceptions - iterable structure of exception classes ignored during calls.<br/>           By default, it contains NoSuchElementException only.<br/>    <br/>        Example::<br/>    <br/>         from selenium.webdriver.support.wait import WebDriverWait \n<br/>         element = WebDriverWait(driver, 10).until(lambda x: x.find_element(By.ID, &quot;someId&quot;)) \n<br/>         is_disappeared = WebDriverWait(driver, 30, 1, (ElementNotVisibleException)).\\ \n<br/>                     until_not(lambda x: x.find_element(By.ID, &quot;someId&quot;).is_displayed())<br/>        &quot;&quot;&quot;<br/>        self._driver = driver<br/>&gt;       self._timeout = float(timeout)<br/><span class="error">E       ValueError: could not convert string to float: &quot;option[value=&#x27;5&#x27;]&quot;</span><br/><br/>venv/lib/python3.9/site-packages/selenium/webdriver/support/wait.py:55: ValueError<br/></div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">tests/elements_test.py::TestElements::TestButtonPage::test_different_click_on_the_buttons</td>
+          <td class="col-duration">2.22</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;elements_test.TestElements.TestButtonPage object at 0x7fa95c71d6a0&gt;<br/>driver = &lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&quot;5d7c373f893ac144125a352fff35b826&quot;)&gt;<br/><br/>    def test_different_click_on_the_buttons(self, driver):<br/>        button_page = ButtonsPage(driver, &#x27;x&#x27;)<br/>&gt;       button_page.open()<br/><br/>tests/elements_test.py:101: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/>pages/base_page.py:12: in open<br/>    self.driver.get(self.url)<br/>venv/lib/python3.9/site-packages/selenium/webdriver/remote/webdriver.py:449: in get<br/>    self.execute(Command.GET, {&quot;url&quot;: url})<br/>venv/lib/python3.9/site-packages/selenium/webdriver/remote/webdriver.py:440: in execute<br/>    self.error_handler.check_response(response)<br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>self = &lt;selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x7fa95919d5e0&gt;<br/>response = {&#x27;status&#x27;: 400, &#x27;value&#x27;: &#x27;{&quot;value&quot;:{&quot;error&quot;:&quot;invalid argument&quot;,&quot;message&quot;:&quot;invalid argument\\n  (Session info: chrome=1...fff203978fc _pthread_start + 224\\n22  libsystem_pthread.dylib             0x00007fff20393443 thread_start + 15\\n&quot;}}&#x27;}<br/><br/>    def check_response(self, response: Dict[str, Any]) -&gt; None:<br/>        &quot;&quot;&quot;Checks that a JSON response from the WebDriver does not have an<br/>        error.<br/>    <br/>        :Args:<br/>         - response - The JSON response from the WebDriver server as a dictionary<br/>           object.<br/>    <br/>        :Raises: If the response contains an error message.<br/>        &quot;&quot;&quot;<br/>        status = response.get(&quot;status&quot;, None)<br/>        if not status or status == ErrorCode.SUCCESS:<br/>            return<br/>        value = None<br/>        message = response.get(&quot;message&quot;, &quot;&quot;)<br/>        screen: str = response.get(&quot;screen&quot;, &quot;&quot;)<br/>        stacktrace = None<br/>        if isinstance(status, int):<br/>            value_json = response.get(&quot;value&quot;, None)<br/>            if value_json and isinstance(value_json, str):<br/>                import json<br/>    <br/>                try:<br/>                    value = json.loads(value_json)<br/>                    if len(value) == 1:<br/>                        value = value[&quot;value&quot;]<br/>                    status = value.get(&quot;error&quot;, None)<br/>                    if not status:<br/>                        status = value.get(&quot;status&quot;, ErrorCode.UNKNOWN_ERROR)<br/>                        message = value.get(&quot;value&quot;) or value.get(&quot;message&quot;)<br/>                        if not isinstance(message, str):<br/>                            value = message<br/>                            message = message.get(&quot;message&quot;)<br/>                    else:<br/>                        message = value.get(&quot;message&quot;, None)<br/>                except ValueError:<br/>                    pass<br/>    <br/>        exception_class: Type[WebDriverException]<br/>        if status in ErrorCode.NO_SUCH_ELEMENT:<br/>            exception_class = NoSuchElementException<br/>        elif status in ErrorCode.NO_SUCH_FRAME:<br/>            exception_class = NoSuchFrameException<br/>        elif status in ErrorCode.NO_SUCH_SHADOW_ROOT:<br/>            exception_class = NoSuchShadowRootException<br/>        elif status in ErrorCode.NO_SUCH_WINDOW:<br/>            exception_class = NoSuchWindowException<br/>        elif status in ErrorCode.STALE_ELEMENT_REFERENCE:<br/>            exception_class = StaleElementReferenceException<br/>        elif status in ErrorCode.ELEMENT_NOT_VISIBLE:<br/>            exception_class = ElementNotVisibleException<br/>        elif status in ErrorCode.INVALID_ELEMENT_STATE:<br/>            exception_class = InvalidElementStateException<br/>        elif (<br/>            status in ErrorCode.INVALID_SELECTOR<br/>            or status in ErrorCode.INVALID_XPATH_SELECTOR<br/>            or status in ErrorCode.INVALID_XPATH_SELECTOR_RETURN_TYPER<br/>        ):<br/>            exception_class = InvalidSelectorException<br/>        elif status in ErrorCode.ELEMENT_IS_NOT_SELECTABLE:<br/>            exception_class = ElementNotSelectableException<br/>        elif status in ErrorCode.ELEMENT_NOT_INTERACTABLE:<br/>            exception_class = ElementNotInteractableException<br/>        elif status in ErrorCode.INVALID_COOKIE_DOMAIN:<br/>            exception_class = InvalidCookieDomainException<br/>        elif status in ErrorCode.UNABLE_TO_SET_COOKIE:<br/>            exception_class = UnableToSetCookieException<br/>        elif status in ErrorCode.TIMEOUT:<br/>            exception_class = TimeoutException<br/>        elif status in ErrorCode.SCRIPT_TIMEOUT:<br/>            exception_class = TimeoutException<br/>        elif status in ErrorCode.UNKNOWN_ERROR:<br/>            exception_class = WebDriverException<br/>        elif status in ErrorCode.UNEXPECTED_ALERT_OPEN:<br/>            exception_class = UnexpectedAlertPresentException<br/>        elif status in ErrorCode.NO_ALERT_OPEN:<br/>            exception_class = NoAlertPresentException<br/>        elif status in ErrorCode.IME_NOT_AVAILABLE:<br/>            exception_class = ImeNotAvailableException<br/>        elif status in ErrorCode.IME_ENGINE_ACTIVATION_FAILED:<br/>            exception_class = ImeActivationFailedException<br/>        elif status in ErrorCode.MOVE_TARGET_OUT_OF_BOUNDS:<br/>            exception_class = MoveTargetOutOfBoundsException<br/>        elif status in ErrorCode.JAVASCRIPT_ERROR:<br/>            exception_class = JavascriptException<br/>        elif status in ErrorCode.SESSION_NOT_CREATED:<br/>            exception_class = SessionNotCreatedException<br/>        elif status in ErrorCode.INVALID_ARGUMENT:<br/>            exception_class = InvalidArgumentException<br/>        elif status in ErrorCode.NO_SUCH_COOKIE:<br/>            exception_class = NoSuchCookieException<br/>        elif status in ErrorCode.UNABLE_TO_CAPTURE_SCREEN:<br/>            exception_class = ScreenshotException<br/>        elif status in ErrorCode.ELEMENT_CLICK_INTERCEPTED:<br/>            exception_class = ElementClickInterceptedException<br/>        elif status in ErrorCode.INSECURE_CERTIFICATE:<br/>            exception_class = InsecureCertificateException<br/>        elif status in ErrorCode.INVALID_COORDINATES:<br/>            exception_class = InvalidCoordinatesException<br/>        elif status in ErrorCode.INVALID_SESSION_ID:<br/>            exception_class = InvalidSessionIdException<br/>        elif status in ErrorCode.UNKNOWN_METHOD:<br/>            exception_class = UnknownMethodException<br/>        else:<br/>            exception_class = WebDriverException<br/>        if not value:<br/>            value = response[&quot;value&quot;]<br/>        if isinstance(value, str):<br/>            raise exception_class(value)<br/>        if message == &quot;&quot; and &quot;message&quot; in value:<br/>            message = value[&quot;message&quot;]<br/>    <br/>        screen = None  # type: ignore[assignment]<br/>        if &quot;screen&quot; in value:<br/>            screen = value[&quot;screen&quot;]<br/>    <br/>        stacktrace = None<br/>        st_value = value.get(&quot;stackTrace&quot;) or value.get(&quot;stacktrace&quot;)<br/>        if st_value:<br/>            if isinstance(st_value, str):<br/>                stacktrace = st_value.split(&quot;\n&quot;)<br/>            else:<br/>                stacktrace = []<br/>                try:<br/>                    for frame in st_value:<br/>                        line = frame.get(&quot;lineNumber&quot;, &quot;&quot;)<br/>                        file = frame.get(&quot;fileName&quot;, &quot;&lt;anonymous&gt;&quot;)<br/>                        if line:<br/>                            file = f&quot;{file}:{line}&quot;<br/>                        meth = frame.get(&quot;methodName&quot;, &quot;&lt;anonymous&gt;&quot;)<br/>                        if &quot;className&quot; in frame:<br/>                            meth = f&quot;{frame[&#x27;className&#x27;]}.{meth}&quot;<br/>                        msg = &quot;    at %s (%s)&quot;<br/>                        msg = msg % (meth, file)<br/>                        stacktrace.append(msg)<br/>                except TypeError:<br/>                    pass<br/>        if exception_class == UnexpectedAlertPresentException:<br/>            alert_text = None<br/>            if &quot;data&quot; in value:<br/>                alert_text = value[&quot;data&quot;].get(&quot;text&quot;)<br/>            elif &quot;alert&quot; in value:<br/>                alert_text = value[&quot;alert&quot;].get(&quot;text&quot;)<br/>            raise exception_class(message, screen, stacktrace, alert_text)  # type: ignore[call-arg]  # mypy is not smart enough here<br/>&gt;       raise exception_class(message, screen, stacktrace)<br/><span class="error">E       selenium.common.exceptions.InvalidArgumentException: Message: invalid argument</span><br/><span class="error">E         (Session info: chrome=115.0.5790.170)</span><br/><span class="error">E       Stacktrace:</span><br/><span class="error">E       0   chromedriver                        0x0000000102c276b8 chromedriver + 4937400</span><br/><span class="error">E       1   chromedriver                        0x0000000102c1eb73 chromedriver + 4901747</span><br/><span class="error">E       2   chromedriver                        0x00000001027dc490 chromedriver + 435344</span><br/><span class="error">E       3   chromedriver                        0x00000001027c42b8 chromedriver + 336568</span><br/><span class="error">E       4   chromedriver                        0x00000001027c21bd chromedriver + 328125</span><br/><span class="error">E       5   chromedriver                        0x00000001027c238d chromedriver + 328589</span><br/><span class="error">E       6   chromedriver                        0x00000001027de9c6 chromedriver + 444870</span><br/><span class="error">E       7   chromedriver                        0x000000010285f531 chromedriver + 972081</span><br/><span class="error">E       8   chromedriver                        0x0000000102844012 chromedriver + 860178</span><br/><span class="error">E       9   chromedriver                        0x000000010285ee76 chromedriver + 970358</span><br/><span class="error">E       10  chromedriver                        0x0000000102843de3 chromedriver + 859619</span><br/><span class="error">E       11  chromedriver                        0x0000000102811d7f chromedriver + 654719</span><br/><span class="error">E       12  chromedriver                        0x00000001028130de chromedriver + 659678</span><br/><span class="error">E       13  chromedriver                        0x0000000102be32ad chromedriver + 4657837</span><br/><span class="error">E       14  chromedriver                        0x0000000102be8130 chromedriver + 4677936</span><br/><span class="error">E       15  chromedriver                        0x0000000102beedef chromedriver + 4705775</span><br/><span class="error">E       16  chromedriver                        0x0000000102be905a chromedriver + 4681818</span><br/><span class="error">E       17  chromedriver                        0x0000000102bbb92c chromedriver + 4495660</span><br/><span class="error">E       18  chromedriver                        0x0000000102c06838 chromedriver + 4802616</span><br/><span class="error">E       19  chromedriver                        0x0000000102c069b7 chromedriver + 4802999</span><br/><span class="error">E       20  chromedriver                        0x0000000102c1799f chromedriver + 4872607</span><br/><span class="error">E       21  libsystem_pthread.dylib             0x00007fff203978fc _pthread_start + 224</span><br/><span class="error">E       22  libsystem_pthread.dylib             0x00007fff20393443 thread_start + 15</span><br/><br/>venv/lib/python3.9/site-packages/selenium/webdriver/remote/errorhandler.py:245: InvalidArgumentException<br/></div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">tests/form_test.py::TestForm::TestFormPage::test_form</td>
+          <td class="col-duration">5.77</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log">self = &lt;form_test.TestForm.TestFormPage object at 0x7fa959353f70&gt;, driver = &lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&quot;424b1038cae730a6ec481b178e1c9095&quot;)&gt;<br/><br/>    def test_form(self, driver):<br/>        form_page = FormPage(driver, &#x27;https://demoqa.com/automation-practice-form&#x27;)<br/>        form_page.open()<br/>        person_info = form_page.fill_form_fields()<br/>&gt;       result = form_page.form_result()<br/><br/>tests/form_test.py:10: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/>pages/form_page.py:40: in form_result<br/>    result_table = self.element_is_present(self.locators.RESULT_TABLE)<br/>pages/base_page.py:21: in element_is_present<br/>    return wait(self.driver, timeout).until(EC.presence_of_element_located(locator))<br/>venv/lib/python3.9/site-packages/selenium/webdriver/support/wait.py:86: in until<br/>    value = method(self._driver)<br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ <br/><br/>driver = &lt;selenium.webdriver.chrome.webdriver.WebDriver (session=&quot;424b1038cae730a6ec481b178e1c9095&quot;)&gt;<br/><br/>    def _predicate(driver):<br/>&gt;       return driver.find_element(*locator)<br/><span class="error">E       TypeError: find_element() takes from 1 to 3 positional arguments but 40 were given</span><br/><br/>venv/lib/python3.9/site-packages/selenium/webdriver/support/expected_conditions.py:69: TypeError<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/alerts_test.py::TestAlertsFrameWindow::TestBrowserWindows::test_new_tab</td>
+          <td class="col-duration">7.21</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> -----------------------------Captured stderr setup------------------------------ <br/>[WDM] - Downloading:   0%|          | 0.00/8.29M [00:00&lt;?, ?B/s][WDM] - Downloading:   8%|▊         | 704k/8.29M [00:00&lt;00:01, 7.08MB/s][WDM] - Downloading:  30%|██▉       | 2.46M/8.29M [00:00&lt;00:00, 12.5MB/s][WDM] - Downloading:  64%|██████▍   | 5.34M/8.29M [00:00&lt;00:00, 20.1MB/s][WDM] - Downloading:  92%|█████████▏| 7.63M/8.29M [00:00&lt;00:00, 21.5MB/s][WDM] - Downloading: 100%|██████████| 8.29M/8.29M [00:00&lt;00:00, 18.5MB/s]
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/alerts_test.py::TestAlertsFrameWindow::TestBrowserWindows::test_new_window</td>
+          <td class="col-duration">5.00</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/alerts_test.py::TestAlertsFrameWindow::TestAlertsPage::test_see_alerts</td>
+          <td class="col-duration">35.36</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/alerts_test.py::TestAlertsFrameWindow::TestAlertsPage::test_alert_appear_5_sec</td>
+          <td class="col-duration">8.98</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/alerts_test.py::TestAlertsFrameWindow::TestAlertsPage::test_confirm_alert</td>
+          <td class="col-duration">4.29</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/alerts_test.py::TestAlertsFrameWindow::TestAlertsPage::test_promt_alert</td>
+          <td class="col-duration">4.28</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/alerts_test.py::TestAlertsFrameWindow::TestFramesPage::test_frame</td>
+          <td class="col-duration">4.03</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/alerts_test.py::TestAlertsFrameWindow::TestNestedFramesPage::test_nested_frames</td>
+          <td class="col-duration">4.40</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/alerts_test.py::TestAlertsFrameWindow::TestModalDialogPage::test_modal</td>
+          <td class="col-duration">4.45</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/elements_test.py::TestElements::TestTextBox::test_text_box</td>
+          <td class="col-duration">4.74</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/elements_test.py::TestElements::TestCheckBox::test_check_box</td>
+          <td class="col-duration">5.69</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>Public
+Private
+General
+Downloads
+Word File.doc
+Excel File.doc
+[&#x27;public&#x27;,&#x27;private&#x27;,&#x27;general&#x27;,&#x27;downloads&#x27;,&#x27;wordfile&#x27;,&#x27;excelfile&#x27;]
+[&#x27;public&#x27;,&#x27;private&#x27;,&#x27;general&#x27;,&#x27;downloads&#x27;,&#x27;wordfile&#x27;,&#x27;excelfile&#x27;]
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/elements_test.py::TestElements::TestWebTable::test_web_table_add_person</td>
+          <td class="col-duration">4.59</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>[&#x27;Сергей&#x27;, &#x27;Веселов&#x27;, &#x27;45&#x27;, &#x27;sigizmund38@example.net&#x27;, &#x27;29155&#x27;, &#x27;Военно-полевой хирург&#x27;]
+[[&#x27;Cierra&#x27;, &#x27;Vega&#x27;, &#x27;39&#x27;, &#x27;cierra@example.com&#x27;, &#x27;10000&#x27;, &#x27;Insurance&#x27;], [&#x27;Alden&#x27;, &#x27;Cantrell&#x27;, &#x27;45&#x27;, &#x27;alden@example.com&#x27;, &#x27;12000&#x27;, &#x27;Compliance&#x27;], [&#x27;Kierra&#x27;, &#x27;Gentry&#x27;, &#x27;29&#x27;, &#x27;kierra@example.com&#x27;, &#x27;2000&#x27;, &#x27;Legal&#x27;], [&#x27;Сергей&#x27;, &#x27;Веселов&#x27;, &#x27;45&#x27;, &#x27;sigizmund38@example.net&#x27;, &#x27;29155&#x27;, &#x27;Военно-полевой хирург&#x27;], [&#x27;       &#x27;], [&#x27;       &#x27;], [&#x27;       &#x27;], [&#x27;       &#x27;], [&#x27;       &#x27;], [&#x27;       &#x27;]]
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/elements_test.py::TestElements::TestWebTable::test_web_table_update_person_info</td>
+          <td class="col-duration">47.28</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>Назаров
+27
+[&#x27;Раиса&#x27;, &#x27;Назаров&#x27;, &#x27;27&#x27;, &#x27;lmoiseev@example.org&#x27;, &#x27;37777&#x27;, &#x27;Системный администратор&#x27;]
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/elements_test.py::TestElements::TestWebTable::test_web_table_delete_person</td>
+          <td class="col-duration">11.97</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/elements_test.py::TestElements::TestLinksPage::test_check_link</td>
+          <td class="col-duration">4.60</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/elements_test.py::TestElements::TestLinksPage::test_broken_link</td>
+          <td class="col-duration">5.40</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/elements_test.py::TestElements::TestUploadAndDownload::test_upload_file</td>
+          <td class="col-duration">6.73</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>/Users/Dmitry/Documents/filetest90.txt
+C:\fakepath\filetest90.txt
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/elements_test.py::TestElements::TestUploadAndDownload::test_download_file</td>
+          <td class="col-duration">5.21</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/elements_test.py::TestElements::TestDynamicPropertiesPage::test_dynamic_properties</td>
+          <td class="col-duration">10.05</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/elements_test.py::TestElements::TestDynamicPropertiesPage::test_appear_button</td>
+          <td class="col-duration">23.63</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/elements_test.py::TestElements::TestDynamicPropertiesPage::test_enable_button</td>
+          <td class="col-duration">4.40</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/widgests_test.py::TestWidgets::TestAccordianPage::test_accordian</td>
+          <td class="col-duration">5.39</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/widgests_test.py::TestWidgets::TestAutoCompletePage::test_till_multi_autocomplete</td>
+          <td class="col-duration">6.14</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>[&#x27;Aqua&#x27;, &#x27;Red&#x27;, &#x27;Voilet&#x27;, &#x27;Magenta&#x27;, &#x27;Yellow&#x27;]
+[&#x27;Aqua&#x27;, &#x27;Red&#x27;, &#x27;Voilet&#x27;, &#x27;Magenta&#x27;, &#x27;Yellow&#x27;]
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/widgests_test.py::TestWidgets::TestAutoCompletePage::test_remove_value_from_multi</td>
+          <td class="col-duration">5.24</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>5
+4
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/widgests_test.py::TestWidgets::TestAutoCompletePage::test_fill_single_autocomplete</td>
+          <td class="col-duration">4.87</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/widgests_test.py::TestWidgets::TestDatePickerPage::test_change_date</td>
+          <td class="col-duration">4.53</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>08/10/2023
+02/27/2011
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">tests/widgests_test.py::TestWidgets::TestDatePickerPage::test_change_date_time</td>
+          <td class="col-duration">6.25</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="4">
+            <div class="log"> ------------------------------Captured stdout call------------------------------ <br/>August 10, 2023 4:53 PM
+March 21, 2020 4:53 PM
+<br/></div></td></tr></tbody></table></body></html>

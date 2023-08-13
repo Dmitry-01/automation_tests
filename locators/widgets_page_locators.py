@@ -30,3 +30,29 @@ class SliderLocators:
 class ProgressBarLocators:
     PROGRESS_BAR_BUTTON = (By.CSS_SELECTOR,'button[id="startStopButton"]')
     PROGRESS_BAR_VALUE = (By.CSS_SELECTOR,'div[class="progress-bar bg-info"]')
+
+class TabsPageLocators:
+    TABS_WHAT = (By.CSS_SELECTOR,"a[id='demo-tab-what']")
+    TABS_WHAT_CONTENT = (By.CSS_SELECTOR,"div[id='demo-tabpane-what']")
+    TABS_ORIGIN = (By.CSS_SELECTOR,"a[id='demo-tab-origin']")
+    TABS_ORIGIN_CONTENT = (By.CSS_SELECTOR,"div[id='demo-tabpane-origin']")
+    TABS_USE = (By.CSS_SELECTOR,"a[id='demo-tab-use']")
+    TABS_USE_CONTENT = (By.CSS_SELECTOR,"div[id='demo-tabpane-use']")
+    TABS_MORE = (By.CSS_SELECTOR,"a[id='demo-tab-more']")
+    TABS_MORE_CONTENT = (By.CSS_SELECTOR,"div[id='demo-tabpane-more']")
+
+class ToolTipsLocators:
+    BUTTON = (By.CSS_SELECTOR,"button[id='toolTipButton']")
+    TOOL_TIP_BUTTON = (By.CSS_SELECTOR,"button[aria-describedby='buttonToolTip']")
+
+    FIELD = (By.CSS_SELECTOR,"input[id='toolTipTextField']")
+    TOOL_TIP_FIELD = (By.CSS_SELECTOR, "input[aria-describedby='textFieldToolTip']")
+
+    CONTRARY_LINK = (By.XPATH, "//*[.='Contrary']")
+    TOOL_TIP_CONTRARY_LINK = (By.CSS_SELECTOR, "a[aria-describedby='contraryTexToolTip']")
+
+    SECTION_LINK = (By.XPATH, "//*[.='1.10.32']")
+    TOOL_TIP_SECTION_LINK = (By.CSS_SELECTOR, "a[aria-describedby='sectionToolTip']")
+
+    TOOL_TIPS_INNERS = (By.CSS_SELECTOR, "div[class='tooltip-inner']")
+
