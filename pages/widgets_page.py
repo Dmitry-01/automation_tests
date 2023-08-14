@@ -8,7 +8,7 @@ from selenium.webdriver.support.select import Select
 
 from generator.generator import generated_date
 from locators.widgets_page_locators import AccordianPageLocators, DataPickerLocators, SliderLocators, \
-    ProgressBarLocators, TabsPageLocators, ToolTipsLocators
+    ProgressBarLocators, TabsPageLocators, ToolTipsLocators, MenuPageLocators
 from pages.base_page import BasePage
 
 class AccordianPage(BasePage):
@@ -141,7 +141,19 @@ class ToolTipsPage(BasePage):
 
         return tool_tip_text_button, tool_tip_text_field, tool_tip_text_contrary, tool_tip_text_section
 
+class MenuPage(BasePage):
+    locators = MenuPageLocators()
+    def check_menu(self):
+        menu_item_list = self.elements_are_present(self.locators.MENU_ITEM_LIST)
+        data = []
+        for item in menu_item_list:
+            self.action_move_to_element(item)
+            # self.element_is_visible(item)
+            data.append(item.text)
+        return data
 
+
+    pass
 
     # click_me_button.find_element(By.XPATH, self.locators.CLICK_ME_BUTTON).click()
     # CLICK_ME_BUTTON = ("//*[text()='Click Me']")
